@@ -11,7 +11,7 @@ import numpy as np
 class OllamaEmbeddings:
     """Generate embeddings using Ollama"""
     
-    def __init__(self, model: str = "nomic-embed-text", base_url: str = "http://localhost:11434"):
+    def __init__(self, model: str = "nomic-embed-text", base_url: str = "http://ollama:11434"):
         """
         Initialize Ollama embeddings
         
@@ -20,7 +20,7 @@ class OllamaEmbeddings:
             base_url: Ollama server base URL
         """
         self.model = model
-        self.base_url = base_url
+        self.base_url = base_url or os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
         self.embedding_dim = None
     
     def embed(self, text: str) -> np.ndarray:
@@ -103,4 +103,13 @@ def embed_chunks(chunks: List, model: str = "nomic-embed-text",
     # Convert to numpy array
     embeddings_array = np.array(embeddings, dtype=np.float32)
     
-    return embeddings_array, embedder.embedding_dim
+    # Get embedding dimension - ensure it's int and valid
+    if len(embeddings_array) > 0:
+        embedding_dim = int(embeddings_array.shape[1])
+    else:
+        embedding_dim = int(embedder.embedding_dim or 384)
+    
+    if embedding_dim <= 0:
+        raise ValueError(f"Invalid embedding dimension: {embedding_dim}")
+    
+    return embeddings_array, embedding_dim

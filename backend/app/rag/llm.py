@@ -9,7 +9,7 @@ import json
 class OllamaLLM:
     """Interface with Ollama LLM"""
     
-    def __init__(self, model: str = "llama2", base_url: str = "http://localhost:11434"):
+    def __init__(self, model: str = "llama2", base_url: str = None):
         """
         Initialize Ollama LLM
         
@@ -17,8 +17,9 @@ class OllamaLLM:
             model: Model name (llama2, neural-chat, mistral, etc.)
             base_url: Ollama server base URL
         """
+        import os
         self.model = model
-        self.base_url = base_url
+        self.base_url = base_url or os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
     
     def generate(self, prompt: str, temperature: float = 0.7, 
                 max_tokens: int = 512, stream: bool = False) -> str:
