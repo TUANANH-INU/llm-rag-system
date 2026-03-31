@@ -63,12 +63,6 @@ services:
       - backend
     networks:
       - rag-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
 volumes:
   ollama_data:

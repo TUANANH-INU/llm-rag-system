@@ -37,71 +37,35 @@ Ollama Service (11434)
 
 ## 📋 Prerequisites
 
-- Python 3.10+
-- Node.js 18+
-- Docker & Docker Compose (for containerized deployment)
-- Or Ollama installed locally (for local deployment)
+- Docker & Docker Compose
+- 4GB+ RAM (for Ollama models)
+- Port 3000 (Frontend), 8000 (Backend), 11434 (Ollama) available
 
 ## 🚀 Quick Start
 
-### Option 1: Docker Compose (Recommended)
-
 ```bash
-cd scripts
-bash start_docker.sh
+# Start entire system with Docker Compose
+docker compose -f docker/docker-compose.yml up -d
+
+# Wait 30-60 seconds for services to initialize, then access:
 ```
 
-The system will start with:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
-- Ollama Service: http://localhost:11434
+**Access the application:**
+- 🎨 **Frontend:** http://localhost:3000
+- 📡 **Backend API:** http://localhost:8000
+- 📖 **API Documentation:** http://localhost:8000/docs
+- 🤖 **Ollama Service:** http://localhost:11434
 
-### Option 2: Local Setup
-
-#### Backend Setup
-
+**Stop the system:**
 ```bash
-# Navigate to backend directory
-cd backend
-
-# Run setup script (Linux/Mac)
-bash ../scripts/setup_backend.sh
-
-# Activate virtual environment
-source venv/bin/activate
-
-# Create .env file
-cp .env.example .env
-
-# Start backend server
-python main.py
+docker compose -f docker/docker-compose.yml down
 ```
 
-#### Ollama Setup
-
+**View logs:**
 ```bash
-# Install Ollama (if not already installed)
-curl -fsSL https://ollama.ai/install.sh | sh
-
-# Pull required models
-ollama pull llama2
-ollama pull nomic-embed-text
-
-# Start Ollama service (in separate terminal)
-ollama serve
-```
-
-#### Frontend Setup
-
-```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+docker compose -f docker/docker-compose.yml logs -f backend
+docker compose -f docker/docker-compose.yml logs -f ollama
+docker compose -f docker/docker-compose.yml logs -f frontend
 ```
 
 ## 📁 Project Structure
@@ -122,56 +86,46 @@ llm-rag-system/
 │   │       ├── documents.py      # Document endpoints
 │   │       └── rag.py            # RAG query endpoints
 │   ├── main.py                   # FastAPI application
-│   └── requirements.txt          # Python dependencies
+│   ├── requirements.txt          # Python dependencies
+│   └── .env.example              # Environment template
 ├── frontend/
 │   ├── src/
 │   │   ├── components/           # React components
 │   │   ├── services/             # API services
-│   │   └── App.jsx               # Main app component
+│   │   ├── App.jsx               # Main app component
+│   │   └── index.css             # Styles
 │   ├── package.json              # NPM dependencies
-│   └── Dockerfile                # Frontend container
+│   ├── Dockerfile                # Frontend container
+│   └── .env                      # Environment variables
 ├── docker/
 │   ├── Dockerfile.backend        # Backend container
 │   ├── Dockerfile.ollama         # Ollama container
-│   └── docker-compose.yml        # Compose configuration
-└── scripts/
-    ├── setup_backend.sh          # Backend setup script
-    ├── setup_frontend.sh         # Frontend setup script
-    ├── setup_ollama.sh           # Ollama setup script
-    └── start_docker.sh           # Docker startup script
+│   └── docker-compose.yml        # Compose orchestration
+└── data/                         # Uploaded documents & vector store
+    ├── uploads/                  # PDF uploads
+    └── vector_store/             # FAISS indices
 ```
 
 ## 🔧 Configuration
 
-### Backend Environment Variables
+All configuration is done through environment variables in Docker containers:
 
-Create `.env` file in `backend/` directory:
-
+**Backend** - Automatically loaded from `backend/.env.example`:
 ```env
-# LLM Configuration
-LLM_MODEL=llama2              # or mistral, neural-chat
+LLM_MODEL=llama2
 EMBEDDING_MODEL=nomic-embed-text
-OLLAMA_BASE_URL=http://localhost:11434
-
-# API Configuration
+OLLAMA_BASE_URL=http://ollama:11434
 API_HOST=0.0.0.0
 API_PORT=8000
-RELOAD=false
-
-# Data Configuration
-DATA_DIR=data
-VECTOR_STORE_PATH=data/vector_store
-UPLOAD_DIR=data/uploads
 ```
 
-### Frontend Environment Variables
-
-Create `.env` file in `frontend/` directory:
-
+**Frontend** - Configured in `frontend/.env`:
 ```env
 VITE_API_URL=http://localhost:8000
 VITE_APP_TITLE=RAG Chatbot
 ```
+
+To customize settings, update the `docker-compose.yml` environment variables or the `.env` files before running the containers.
 
 ## 📚 API Endpoints
 
@@ -227,112 +181,133 @@ VITE_APP_TITLE=RAG Chatbot
 ## 🐳 Docker Commands
 
 ```bash
-# Build all images
-docker-compose build
-
 # Start all services
-docker-compose up -d
+docker compose -f docker/docker-compose.yml up -d
 
-# View logs
-docker-compose logs -f
+# Stop all services
+docker compose -f docker/docker-compose.yml down
 
-# Stop services
-docker-compose down
+# View logs (all services)
+docker compose -f docker/docker-compose.yml logs -f
 
-# Remove all data
-docker-compose down -v
+# View specific service logs
+docker compose -f docker/docker-compose.yml logs -f backend
+docker compose -f docker/docker-compose.yml logs -f ollama
+docker compose -f docker/docker-compose.yml logs -f frontend
+
+# Restart specific service
+docker compose -f docker/docker-compose.yml restart backend
+
+# Rebuild images (after code changes)
+docker compose -f docker/docker-compose.yml build
+
+# Remove all containers and volumes
+docker compose -f docker/docker-compose.yml down -v
+
+# Check service status
+docker compose -f docker/docker-compose.yml ps
 ```
 
 ## 🔧 Troubleshooting
 
-### Ollama connection issues
-- Verify Ollama is running: `curl http://localhost:11434/api/tags`
-- Check `OLLAMA_BASE_URL` in backend `.env`
-- Ensure Ollama models are pulled: `ollama list`
-
-### Models not available
+**Services won't start?**
 ```bash
-# Pull required models
-ollama pull llama2
-ollama pull nomic-embed-text
-ollama pull mistral  # Optional alternative
+# Check logs
+docker compose -f docker/docker-compose.yml logs
+
+# Verify port availability
+lsof -i :3000 :8000 :11434
+
+# Clean up and restart
+docker compose -f docker/docker-compose.yml down -v
+docker compose -f docker/docker-compose.yml build
+docker compose -f docker/docker-compose.yml up -d
 ```
 
-### Backend connection issues
-- Check backend logs: `docker-compose logs backend`
-- Verify API port 8000 is accessible
-- Check CORS settings if frontend can't reach backend
+**Slow performance?**
+```bash
+# Check container resource usage
+docker stats
+```
 
-### PDF upload issues
-- Ensure PDF files are valid
-- Check file size limits
-- Verify write permissions in `data/uploads/`
+**Need to access container shell?**
+```bash
+# Access backend container
+docker compose -f docker/docker-compose.yml exec backend bash
+
+# Access frontend container
+docker compose -f docker/docker-compose.yml exec frontend sh
+
+# Access ollama container
+docker compose -f docker/docker-compose.yml exec ollama bash
+```
+
+**Ollama models not loading?**
+- Wait 1-2 minutes after startup for models to pull
+- Check ollama logs: `docker compose -f docker/docker-compose.yml logs ollama`
+- Verify internet connection during container startup
 
 ## 📝 Available Models
 
-### LLM Models
-- `llama2` - Default, good balance of speed and quality
-- `mistral` - Smaller, faster inference
-- `neural-chat` - Optimized for chat
-- `llama3` - Latest LLaMA version (if available)
+To use different LLM models, update `docker-compose.yml`:
 
-### Embedding Models
-- `nomic-embed-text` - Default, good general-purpose embeddings
+**LLM Models:**
+- `llama2` - Default, balanced speed & quality ⭐
+- `mistral` - Smaller, faster
+- `neural-chat` - Optimized for conversation
 
-Pull additional models:
-```bash
-ollama pull mistral
-ollama pull neural-chat
+Change in `docker-compose.yml`:
+```yaml
+environment:
+  - LLM_MODEL=mistral  # or neural-chat, llama2
 ```
 
-## 📊 Performance Tuning
+Then rebuild: `docker compose -f docker/docker-compose.yml build && docker compose -f docker/docker-compose.yml up -d`
 
-### Chunk Size
-- Smaller chunks (256-512): Better precision, more retrieval
-- Larger chunks (1024+): Better context, fewer retrievals
+## 📊 System Configuration
 
-### Retrieval Count (k)
-- Lower k (3-5): Faster, focused results
-- Higher k (10-20): More comprehensive, slower
+**Adjust RAG parameters in `backend/main.py` before building:**
 
-### Batch Size
-- Adjust in `backend/app/rag/embeddings.py`
-- Larger batch = faster processing but more memory
+```python
+# Chunk size (default: 512)
+RAGSystem(chunk_size=1024)
+
+# Retrieval count (default: 5)
+rag_system.query(question, k=10)
+
+# Embedding batch size (larger = faster but more memory)
+embed_chunks(chunks, batch_size=20)
+```
 
 ## 🔒 Security Considerations
 
-- Run Ollama on localhost in production
-- Use authentication for API endpoints
+- Run Ollama on localhost only in production
+- Use authentication for exposed API endpoints
 - Validate and sanitize user inputs
 - Limit file upload sizes
-- Implement rate limiting on API endpoints
+- Implement rate limiting on endpoints
 
-## 📦 Dependencies
+## 📦 Stack Overview
 
-### Backend
+**Backend:**
 - FastAPI - Web framework
-- Ollama - Local LLM integration
-- FAISS - Vector similarity search
-- LangChain - LLM utilities
-- PyPDF - PDF processing
-- BeautifulSoup4 - Web scraping
+- Ollama - Local LLM
+- FAISS - Vector search
+- PyPDF + BeautifulSoup4 - Document processing
 
-### Frontend
+**Frontend:**
 - React 18 - UI framework
 - Vite - Build tool
 - Axios - HTTP client
 
-## 📄 License
-
-See LICENSE file
-
-## 🆘 Support
-
-For issues and questions:
-1. Check the troubleshooting section
-2. Review logs
-3. Check API docs: http://localhost:8000/docs
+**Infrastructure:**
+- Docker & Docker Compose - Containerization
+- Python 3.10 - Backend runtime
+- Node.js 18 - Frontend runtime
 
 ---
 
-**Made with ❤️ for the RAG community**
+## 📝 License
+
+See [LICENSE](LICENSE) file
+
