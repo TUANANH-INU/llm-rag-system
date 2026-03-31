@@ -62,7 +62,7 @@ class OllamaLLM:
     
     def generate_with_context(self, query: str, context: List[Dict[str, Any]], 
                             temperature: float = 0.7, 
-                            max_tokens: int = 512) -> tuple:
+                            max_tokens: int = 256) -> tuple:
         """
         Generate answer based on query and context
         
