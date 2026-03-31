@@ -1,0 +1,12 @@
+# Ollama service with LLaMA3
+FROM ollama/ollama:latest
+
+# Expose Ollama API port
+EXPOSE 11434
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:11434/api/tags || exit 1
+
+# Entrypoint will handle model pulling and serving
+CMD ["ollama", "serve"]

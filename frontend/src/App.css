@@ -1,0 +1,3 @@
+import App.css from './App.module.css'
+
+export const styles = App.css
